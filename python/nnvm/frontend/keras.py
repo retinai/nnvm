@@ -274,21 +274,21 @@ def _convert_upsample(insym, keras_layer, _):
 
     if upsample_type == "UpSampling1D":
         h = keras_layer.size
-        params = {'scale': [h]}
+        params = {'scale': h}
     elif upsample_type == "UpSampling2D":
         h, w = keras_layer.size
         if h != w:
             raise TypeError("Unsupported upsampling type with different axes size : {}"
-                            .format(keras_layer))
+                            .format(keras_layer.size))
         params = {'scale': h}
     elif upsample_type == "UpSampling3D":
         h, w, d = keras_layer.size
         if h != w or w != d:
             raise TypeError("Unsupported upsampling type with different axes size : {}"
-                            .format(keras_layer))
+                            .format(keras_layer.size))
         params = {'scale': h}
     else:
-        raise TypeError("Unsupported upsampling type : {}".format(keras_layer))
+        raise TypeError("Unsupported upsampling type : {}".format(upsample_type))
 
     return _sym.upsampling(insym, **params)
 
@@ -383,6 +383,7 @@ _convert_map = {
     'Subtract'                 : _convert_merge,
     'Multiply'                 : _convert_merge,
     'ZeroPadding2D'            : _convert_padding,
+    'UpSampling2D'           : _convert_upsample,
 
     # 'ZeroPadding1D'          : _convert_padding,
     # 'AveragePooling1D'       : _convert_pooling,
@@ -392,7 +393,6 @@ _convert_map = {
     # 'Cropping1D'             : _convert_cropping,
     # 'Cropping2D'             : _convert_cropping,
     # 'UpSampling1D'           : _convert_upsample,
-    'UpSampling2D'           : _convert_upsample,
     # 'UpSampling3D'           : _convert_upsample,
     # 'Conv1D'                 : _convert_convolution1d,
 
