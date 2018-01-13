@@ -278,12 +278,14 @@ def _convert_upsample(insym, keras_layer, symtab):
     elif upsample_type == "UpSampling2D":
         h, w = keras_layer.size
         if h != w:
-            raise TypeError("Unsupported upsampling type with different dimensions : {}".format(keras_layer))
+            raise TypeError("Unsupported upsampling type with different axes size : {}"
+                .format(keras_layer))
         params = {'scale': h}
     elif upsample_type == "UpSampling3D":
         h, w, d = keras_layer.size
         if h != w or w != d:
-            raise TypeError("Unsupported upsampling type with different dimensions : {}".format(keras_layer))
+            raise TypeError("Unsupported upsampling type with different axes size : {}"
+                .format(keras_layer))
         params = {'scale': h}
     else:
             raise TypeError("Unsupported upsampling type : {}".format(keras_layer))
