@@ -288,7 +288,7 @@ def _convert_upsample(insym, keras_layer, symtab):
                             .format(keras_layer))
         params = {'scale': h}
     else:
-            raise TypeError("Unsupported upsampling type : {}".format(keras_layer))
+        raise TypeError("Unsupported upsampling type : {}".format(keras_layer))
 
     return _sym.upsampling(insym, **params)
 
