@@ -268,7 +268,7 @@ def _convert_pooling(insym, keras_layer, symtab):
             raise TypeError("Unsupported pooling type : {}".format(keras_layer))
 
 
-def _convert_upsample(insym, keras_layer, symtab):
+def _convert_upsample(insym, keras_layer, _):
     _check_data_format(keras_layer)
     upsample_type = type(keras_layer).__name__
 
