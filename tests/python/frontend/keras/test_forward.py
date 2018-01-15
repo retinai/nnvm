@@ -128,11 +128,11 @@ def test_forward_conv_odd_small():
 
 def test_forward_conv_even_strided():
     print("test_forward_conv_even_strided")
-    data = keras.layers.Input(shape=(32,32,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 1), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(1, 2), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(1, 2), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 1), padding='valid')(x)
+    data = keras.layers.Input(shape=(64,64,4))
+    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='same')(data)
+    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='same')(x)
+    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='valid')(x)
+    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='valid')(x)
     print(keras.models.Model(data, x).output_shape)
     x = keras.layers.GlobalMaxPooling2D()(x)
     keras_model = keras.models.Model(data, x)
@@ -141,11 +141,11 @@ def test_forward_conv_even_strided():
 
 def test_forward_conv_odd_strided():
     print("test_forward_conv_odd_strided")
-    data = keras.layers.Input(shape=(31,31,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(1, 2), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 1), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(1, 2), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 1), padding='valid')(x)
+    data = keras.layers.Input(shape=(65,65,4))
+    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='same')(data)
+    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='same')(x)
+    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='valid')(x)
+    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='valid')(x)
     print(keras.models.Model(data, x).output_shape)
     x = keras.layers.GlobalMaxPooling2D()(x)
     keras_model = keras.models.Model(data, x)
