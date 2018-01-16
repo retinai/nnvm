@@ -17,6 +17,9 @@ def verify_keras_frontend(keras_model):
     in_shape = [dim.value if dim.value is not None else 1 for dim in keras_model.input_layers[0].input.shape]
     out_shape = [dim.value if dim.value is not None else 1 for dim in keras_model.output_layers[0].output.shape]
 
+    def replace_nones(shape):
+        return list([s if s else 128 for s in shape])
+
     def get_keras_output(x, dtype='float32'):
         return keras_model.predict(x)
 
@@ -32,7 +35,7 @@ def verify_keras_frontend(keras_model):
         out = m.get_output(0, tvm.nd.empty(out_shape, dtype))
         return out.asnumpy()
 
-    x = np.random.uniform(size=in_shape)
+    x = np.random.uniform(size=replace_nones(in_shape))
     keras_out = get_keras_output(x)
     for target, ctx in ctx_list():
         tvm_out = get_tvm_output(x.transpose([0,3,1,2]), target, ctx)
@@ -69,123 +72,126 @@ def test_forward_dense():
     verify_keras_frontend(keras_model)
 
 
-def test_forward_conv_even():
-    print("test_forward_conv_even")
-    data = keras.layers.Input(shape=(32,32,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,1), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,2), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(2,3), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,5), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(5,6), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,1), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,2), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(2,3), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(5,5), padding='valid')(x)
-    x = keras.layers.GlobalMaxPooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
+def test_forward_conv():
+    print("test_forward_conv")
+    shape = [15, 16]
+    kernel = range(1, 8)
+    stride = [1, 2, 3]
+    for i in shape:
+        for k in kernel:
+            for s in stride:
+                print(i,k,s)
+                data = keras.layers.Input(shape=(i,i,3))
+                x = keras.layers.Conv2D(filters=10, kernel_size=(k,k), strides=(s,s), padding='same')(data)
+                x = keras.layers.GlobalMaxPooling2D()(x)
+                keras_model = keras.models.Model(data, x)
+                verify_keras_frontend(keras_model)
 
 
-def test_forward_conv_odd():
-    print("test_forward_conv_odd")
-    data = keras.layers.Input(shape=(31,31,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,1), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,2), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(2,3), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,4), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(5,6), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,1), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(1,2), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(2,3), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(5,5), padding='valid')(x)
-    x = keras.layers.GlobalMaxPooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
-
-
-def test_forward_conv_even_small():
-    print("test_forward_conv_even_small")
-    data = keras.layers.Input(shape=(4,4,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), padding='same')(x)
-    x = keras.layers.GlobalMaxPooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
-
-
-def test_forward_conv_odd_small():
-    print("test_forward_conv_odd_small")
-    data = keras.layers.Input(shape=(5,5,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(5,5), padding='same')(x)
-    x = keras.layers.GlobalMaxPooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
-
-
-def test_forward_conv_even_strided():
-    print("test_forward_conv_even_strided")
-    data = keras.layers.Input(shape=(64,64,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='valid')(x)
-    print(keras.models.Model(data, x).output_shape)
-    x = keras.layers.GlobalMaxPooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
-
-
-def test_forward_conv_odd_strided():
-    print("test_forward_conv_odd_strided")
-    data = keras.layers.Input(shape=(65,65,4))
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='same')(data)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2, 2), padding='valid')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(4,4), strides=(2, 2), padding='valid')(x)
-    print(keras.models.Model(data, x).output_shape)
-    x = keras.layers.GlobalMaxPooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
+def test_forward_conv_small():
+    print("test_forward_conv_small")
+    shape = [4, 5]
+    kernel = range(1, 8)
+    stride = [1, 2]
+    for i in shape:
+        for k in kernel:
+            for s in stride:
+                print(i,k,s)
+                data = keras.layers.Input(shape=(i,i,3))
+                x = keras.layers.Conv2D(filters=10, kernel_size=(k,k), strides=(s,s), padding='same')(data)
+                x = keras.layers.GlobalMaxPooling2D()(x)
+                keras_model = keras.models.Model(data, x)
+                verify_keras_frontend(keras_model)
 
 
 def test_forward_transpose_conv():
     print("test_forward_transpose_conv")
-    data = keras.layers.Input(shape=(32,32,4))
-    x = data
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2,2), padding='same')(data)
-    x = keras.layers.Conv2DTranspose(filters=10, kernel_size=(3,3), strides=(2, 2), padding='same')(x)
-    x = keras.layers.Conv2D(filters=10, kernel_size=(3,3), strides=(2,2), padding='valid')(data)
-    x = keras.layers.Conv2DTranspose(filters=10, kernel_size=(3,3), strides=(2, 2), padding='valid')(x)
-    x = keras.applications.mobilenet.DepthwiseConv2D(kernel_size=(3,3), padding='same')(x)
-    x = keras.layers.Conv2DTranspose(filters=64, kernel_size=(3,3), padding='valid')(x)
-    x = keras.layers.Conv2DTranspose(filters=64, kernel_size=(3,3), strides=(2, 2), padding='valid')(x)
-    x = keras.layers.Conv2DTranspose(filters=64, kernel_size=(3,3), strides=(2, 2), padding='same')(x)
-    x = keras.layers.GlobalMaxPooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
+    shape = [15, 16]
+    kernel = range(1, 8)
+    stride =[1, 2]
+    for i in shape:
+        for k in kernel:
+            for s in stride:
+                print(i,k,s)
+                data = keras.layers.Input(shape=(i,i,3))
+                x = keras.layers.Conv2DTranspose(filters=10, kernel_size=(k,k), strides=(s,s), padding='same')(data)
+                x = keras.layers.GlobalAveragePooling2D()(x)
+                keras_model = keras.models.Model(data, x)
+                verify_keras_frontend(keras_model)
+
+
+def test_forward_depthwise_conv():
+    print("test_forward_depthwise_conv")
+    shape = [15, 16]
+    kernel = range(1, 8)
+    stride = [1, 2, 3]
+    for i in shape:
+        for k in kernel:
+            for s in stride:
+                print(i,k,s)
+                data = keras.layers.Input(shape=(i,i,3))
+                x = keras.applications.mobilenet.DepthwiseConv2D(kernel_size=(k,k), strides=(s,s), padding='same')(data)
+                x = keras.layers.GlobalAveragePooling2D()(x)
+                keras_model = keras.models.Model(data, x)
+                verify_keras_frontend(keras_model)
 
 
 def test_forward_separable_conv():
     print("test_forward_separable_conv")
-    data = keras.layers.Input(shape=(32,32,3))
-    x = keras.layers.SeparableConv2D(filters=10, kernel_size=(3,3),
-        padding='same', activation='relu')(data)
-    x = keras.layers.BatchNormalization(scale=True, center=False,
-        beta_initializer='uniform', gamma_initializer='uniform')(x)
-    x = keras.layers.GlobalAveragePooling2D()(x)
-    keras_model = keras.models.Model(data, x)
-    verify_keras_frontend(keras_model)
+    shape = [15, 16]
+    kernel = range(1, 8)
+    stride = [1, 2, 3]
+    for i in shape:
+        for k in kernel:
+            for s in stride:
+                print(i,k,s)
+                data = keras.layers.Input(shape=(i,i,3))
+                x = keras.layers.SeparableConv2D(filters=10, kernel_size=(k,k), strides=(s,s),
+                    padding='same', activation='relu')(data)
+                x = keras.layers.BatchNormalization(scale=True, center=False,
+                    beta_initializer='uniform', gamma_initializer='uniform')(x)
+                x = keras.layers.GlobalAveragePooling2D()(x)
+                keras_model = keras.models.Model(data, x)
+                verify_keras_frontend(keras_model)
 
 
 def test_forward_upsample():
     print("test_forward_upsample")
-    data = keras.layers.Input(shape=(32,32,3))
-    x = keras.layers.UpSampling2D(size=(3,3))(data)
-    x = keras.layers.GlobalAveragePooling2D()(x)
+    shape = [15, 16]
+    pool = range(1, 10)
+    for i in shape:
+        for p in pool:
+            print(i, p)
+            data = keras.layers.Input(shape=(i,i,3))
+            x = keras.layers.UpSampling2D(size=(p,p))(data)
+            x = keras.layers.GlobalAveragePooling2D()(x)
+            keras_model = keras.models.Model(data, x)
+            verify_keras_frontend(keras_model)
+
+
+def test_forward_pooling():
+    print("test_forward_pooling")
+    shape = [15, 16]
+    pool = [1, 2, 3, 4]
+    stride = [1, 2, 3, 4]
+    for i in shape:
+        for p in pool:
+            for s in stride:
+                print(i, p, s)
+                data = keras.layers.Input(shape=(i,i,3))
+                x = keras.layers.MaxPooling2D(pool_size=(p,p), strides=(s,s), padding="same")(data)
+                x = keras.layers.GlobalAveragePooling2D()(x)
+                keras_model = keras.models.Model(data, x)
+                verify_keras_frontend(keras_model)
+
+
+def test_forward_shape_inference():
+    print("test_forward_shape_inference")
+    data = keras.layers.Input(shape=(None, None, 3))
+    x = keras.layers.Conv2D(filters=10, kernel_size=(3, 3), padding='same')(data)
+    x = keras.layers.AveragePooling2D()(x)
+    x = keras.layers.UpSampling2D()(x)
+    x = keras.layers.Conv2D(filters=3, kernel_size=(3, 3), padding='same')(data)
     keras_model = keras.models.Model(data, x)
     verify_keras_frontend(keras_model)
 
@@ -194,6 +200,7 @@ def test_forward_vgg16():
     print("test_forward_vgg16")
     keras_model = keras.applications.vgg16.VGG16(include_top=True, weights=None,
         input_shape=(224,224,3), classes=1000)
+    keras_model.summary()
     verify_keras_frontend(keras_model)
 
 
@@ -201,6 +208,7 @@ def test_forward_xception():
     print("test_forward_xception")
     keras_model = keras.applications.xception.Xception(include_top=True, weights=None,
         input_shape=(299,299,3), classes=1000)
+    keras_model.summary()
     verify_keras_frontend(keras_model)
 
 
@@ -208,6 +216,7 @@ def test_forward_resnet50():
     print("test_forward_resnet50")
     keras_model = keras.applications.resnet50.ResNet50(include_top=True, weights=None,
         input_shape=(224,224,3), classes=1000)
+    keras_model.summary()
     verify_keras_frontend(keras_model)
 
 
@@ -215,16 +224,17 @@ if __name__ == '__main__':
     test_forward_softrelu()
     test_forward_leaky_relu()
     test_forward_dense()
-    test_forward_conv_even()
-    test_forward_conv_odd()
-    test_forward_conv_even_small()
-    test_forward_conv_odd_small()
-    test_forward_conv_even_strided()
-    test_forward_conv_odd_strided()
-    test_forward_transpose_conv()
+    # test_forward_conv_small()
+    # test_forward_conv()
+    # test_forward_transpose_conv()
+    test_forward_depthwise_conv()
     test_forward_separable_conv()
     test_forward_upsample()
+    test_forward_pooling()
 
     test_forward_vgg16()
     test_forward_xception()
     test_forward_resnet50()
+
+    test_forward_shape_inference()
+
