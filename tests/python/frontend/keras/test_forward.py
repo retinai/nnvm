@@ -218,6 +218,23 @@ def test_forward_resnet50():
     verify_keras_frontend(keras_model)
 
 
+def test_forward_unet():
+    print("test_forward_unet")
+    skip = []
+    x = data = keras.layers.Input(shape=(256, 256, 3))
+    for i in range(4):
+        x = keras.layers.Conv2D(filters=8*(2**i), kernel_size=(3, 3), padding='same', activation='relu')(x)
+        x = keras.layers.MaxPooling2D()(x)
+        skip.append(x)
+    for i in range(3, -1, -1):
+        x = keras.layers.concatenate([x, skip.pop()], axis=-1)
+        x = keras.layers.Conv2D(filters=8*(2**i), kernel_size=(3, 3), padding='same', activation='relu')(x)
+        x = keras.layers.UpSampling2D()(x)
+    x = keras.layers.Conv2D(filters=1, kernel_size=(3, 3), padding='same')(x)
+    keras_model = keras.models.Model(data, x)
+    verify_keras_frontend(keras_model)
+
+
 if __name__ == '__main__':
     test_forward_softrelu()
     test_forward_leaky_relu()
@@ -233,6 +250,7 @@ if __name__ == '__main__':
     test_forward_vgg16()
     test_forward_xception()
     test_forward_resnet50()
+    test_forward_unet()
 
     test_forward_shape_inference()
 
