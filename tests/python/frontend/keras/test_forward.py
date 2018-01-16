@@ -192,6 +192,7 @@ def test_forward_shape_inference():
     x = keras.layers.AveragePooling2D()(x)
     x = keras.layers.UpSampling2D()(x)
     x = keras.layers.Conv2D(filters=3, kernel_size=(3, 3), padding='same')(data)
+    x = keras.layers.GlobalAveragePooling2D(x)
     keras_model = keras.models.Model(data, x)
     verify_keras_frontend(keras_model)
 
@@ -200,7 +201,6 @@ def test_forward_vgg16():
     print("test_forward_vgg16")
     keras_model = keras.applications.vgg16.VGG16(include_top=True, weights=None,
         input_shape=(224,224,3), classes=1000)
-    keras_model.summary()
     verify_keras_frontend(keras_model)
 
 
@@ -208,7 +208,6 @@ def test_forward_xception():
     print("test_forward_xception")
     keras_model = keras.applications.xception.Xception(include_top=True, weights=None,
         input_shape=(299,299,3), classes=1000)
-    keras_model.summary()
     verify_keras_frontend(keras_model)
 
 
@@ -216,7 +215,6 @@ def test_forward_resnet50():
     print("test_forward_resnet50")
     keras_model = keras.applications.resnet50.ResNet50(include_top=True, weights=None,
         input_shape=(224,224,3), classes=1000)
-    keras_model.summary()
     verify_keras_frontend(keras_model)
 
 
@@ -224,9 +222,9 @@ if __name__ == '__main__':
     test_forward_softrelu()
     test_forward_leaky_relu()
     test_forward_dense()
-    # test_forward_conv_small()
-    # test_forward_conv()
-    # test_forward_transpose_conv()
+    test_forward_conv_small()
+    test_forward_conv()
+    test_forward_transpose_conv()
     test_forward_depthwise_conv()
     test_forward_separable_conv()
     test_forward_upsample()
