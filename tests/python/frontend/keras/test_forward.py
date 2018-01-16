@@ -62,6 +62,17 @@ def test_forward_leaky_relu():
     verify_keras_frontend(keras_model)
 
 
+def test_forward_multiply():
+    print("test_forward_multiply")
+    data =  keras.layers.Input(shape=(32,32,3))
+    x = keras.layers.GlobalAveragePooling2D()(data)
+    x = keras.layers.Reshape((1, 1, 3))(x)
+    x = keras.layers.multiply([x, data])
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    keras_model = keras.models.Model(data, x)
+    verify_keras_frontend(keras_model)
+
+
 def test_forward_dense():
     print("test_forward_dense")
     data = keras.layers.Input(shape=(32,32,3))
@@ -185,6 +196,24 @@ def test_forward_pooling():
                 verify_keras_frontend(keras_model)
 
 
+def test_forward_seblock():
+    print("test_forward_reshape")
+    filters = 16
+    data = keras.layers.Input(shape=(128,128,3))
+    x = keras.layers.Conv2D(filters, (3, 3), padding='same')(data)
+
+    # squeeze-excite block formulation
+    r = keras.layers.GlobalAveragePooling2D()(data)
+    r = keras.layers.Reshape((1, 1, -1))(r)
+    r = keras.layers.Dense(filters // 4, activation='relu', kernel_initializer='he_normal', use_bias=False)(r)
+    r = keras.layers.Dense(filters, activation='sigmoid', kernel_initializer='he_normal', use_bias=False)(r)
+    x = keras.layers.multiply([x, r])
+
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    keras_model = keras.models.Model(data, x)
+    verify_keras_frontend(keras_model)
+
+
 def test_forward_shape_inference():
     print("test_forward_shape_inference")
     data = keras.layers.Input(shape=(None, None, 3))
@@ -238,6 +267,7 @@ def test_forward_unet():
 if __name__ == '__main__':
     test_forward_softrelu()
     test_forward_leaky_relu()
+    test_forward_multiply()
     test_forward_dense()
     test_forward_conv_small()
     test_forward_conv()
@@ -247,6 +277,7 @@ if __name__ == '__main__':
     test_forward_upsample()
     test_forward_pooling()
 
+    test_forward_seblock()
     test_forward_vgg16()
     test_forward_xception()
     test_forward_resnet50()
