@@ -15,7 +15,7 @@ set_session(tf.Session(config=config))
 
 def verify_keras_frontend(keras_model):
     in_shape = [dim.value if dim.value is not None else 1 for dim in keras_model.input_layers[0].input.shape]
-    out_shape = [dim.value if dim.value is not None else 1 for dim in keras_model.output_layers[0].output.shape]
+    out_shape = [dim.value if dim.value is not None else 1 for dim in keras_model.get_output_at(0).shape]
 
     def replace_nones(shape):
         return list([s if s else 128 for s in shape])
