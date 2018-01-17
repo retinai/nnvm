@@ -264,6 +264,15 @@ def test_forward_unet():
     verify_keras_frontend(keras_model)
 
 
+def test_forward_vgg16_layer():
+    print("test_forward_vgg16_layer")
+    keras_model = keras.applications.vgg16.VGG16(include_top=True, weights=None,
+        input_shape=(224,224,3), classes=1000)
+    data = keras.layers.Input((224,224,3))
+    keras_model = keras.models.Model(data, keras_model(data))
+    verify_keras_frontend(keras_model)
+
+
 if __name__ == '__main__':
     test_forward_softrelu()
     test_forward_leaky_relu()
@@ -282,6 +291,7 @@ if __name__ == '__main__':
     test_forward_xception()
     test_forward_resnet50()
     test_forward_unet()
+    test_forward_vgg16_layer()
 
     test_forward_shape_inference()
 
