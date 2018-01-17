@@ -484,9 +484,14 @@ def from_keras(model):
             symtab.get_var(keras_layer.name, must_contain=False)
         else:
             predecessors = []
-            print(keras_layer.name)
             inbound_nodes = keras_layer.inbound_nodes if hasattr(keras_layer, 'inbound_nodes') \
-                        else keras_layer._inbound_nodes
+                        else keras_layer._inbound_nodes if hasattr(keras_layer, '_inbound_nodes') \
+                        else None
+
+            if inbound_nodes is None:
+                raise TypeError("Unknown layer type or unsupported Keras version : {}"
+                                .format(keras_layer))
+
             for node in inbound_nodes:
                 for pred in node.inbound_layers:
                     predecessors.append(pred.name)
