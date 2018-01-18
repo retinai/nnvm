@@ -1,4 +1,4 @@
-import numpy as np
+83f93b1dc2d11bdd105443182828818477c1b4d5import numpy as np
 import nnvm
 import tvm
 from tvm.contrib import graph_runtime
@@ -37,6 +37,17 @@ def verify_keras_frontend(keras_model):
     for target, ctx in ctx_list():
         tvm_out = get_tvm_output(x.transpose([0,3,1,2]), target, ctx)
         np.testing.assert_allclose(keras_out, tvm_out, rtol=1e-5, atol=1e-5)
+
+
+def test_forward_elementwise_add2():
+    data = keras.layers.Input(shape=(32,32,3))
+    r = keras.layers.Conv2D(10, (3, 3), padding="same")(data)
+    x = keras.layers.Conv2D(10, (3, 3), strides=(2, 2), padding="same")(data)
+    x = keras.layers.UpSampling2D()(x)
+    x = keras.layers.add([x, r])
+    x = keras.layers.GlobalAveragePooling2D()(x)
+    keras_model = keras.models.Model(data, x)
+    verify_keras_frontend(keras_model)
 
 
 def test_forward_softrelu():
