@@ -1,4 +1,4 @@
-83f93b1dc2d11bdd105443182828818477c1b4d5import numpy as np
+import numpy as np
 import nnvm
 import tvm
 from tvm.contrib import graph_runtime
@@ -125,6 +125,7 @@ def test_forward_resnet50():
 
 
 if __name__ == '__main__':
+    test_forward_elementwise_add2()
     test_forward_softrelu()
     test_forward_leaky_relu()
     test_forward_dense()
