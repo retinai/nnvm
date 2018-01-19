@@ -57,7 +57,6 @@ def test_forward_elemwise_add():
     y = keras.layers.add([x, r[0], r[1]])
     y = keras.layers.GlobalAveragePooling2D()(y)
     keras_model = keras.models.Model(data, y)
-
     verify_keras_frontend(keras_model)
     
     
